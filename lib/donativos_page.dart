@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 class DonativosPage extends StatelessWidget {
   // TODO: pasar parametros
+  final Map<String, dynamic> donativosData;
+
   DonativosPage({
-    Key? key,
+    Key? key, required this.donativosData,
   }) : super(key: key);
 
   @override
@@ -19,7 +21,7 @@ class DonativosPage extends StatelessWidget {
             ListTile(
               leading: Image.asset("assets/paypal_logo.png"),
               trailing: Text(
-                "777",
+                "${donativosData["totalPaypal"]}",
                 style: TextStyle(fontSize: 32),
               ),
             ),
@@ -27,7 +29,7 @@ class DonativosPage extends StatelessWidget {
             ListTile(
               leading: Image.asset("assets/credit_card.png"),
               trailing: Text(
-                "999",
+                "${donativosData["totalTarjeta"]}",
                 style: TextStyle(fontSize: 32),
               ),
             ),
@@ -36,11 +38,15 @@ class DonativosPage extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.attach_money, size: 64),
               trailing: Text(
-                "999",
+                "${donativosData["acumulado"]}",
                 style: TextStyle(fontSize: 32),
               ),
             ),
             // TODO: mostrar imagen de "Gracias" solo si se ha logrado la meta de 10,000 en donaciones
+            if(donativosData["acumulado"] >= donativosData["donacionesTope"])
+              Image.asset('assets/gracias.png')
+            else
+              Container()
           ],
         ),
       ),

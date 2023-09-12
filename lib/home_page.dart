@@ -9,10 +9,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // double total
   int donacionesTotal = 10000;
-  double donacionesAcumuladas = 0;
+  int donacionesAcumuladas = 0;
+  int donacionesPaypal = 0;
+  int donacionesTarjeta = 0;
   double progress = 0.0;
-
   int? currentSelectedRadio;
   int? currentSelectedDrop;
   var assetsRadioGroup = {
@@ -23,53 +25,84 @@ class _HomePageState extends State<HomePage> {
     0: "Paypal",
     1: "Tarjeta",
   };
-  var dropDownGroups = {
+  var dropDownGroup = {
     0: "100",
-    1: "200",
-    2: "300",
-    3: "800",
-    4: "1000"
+    1: "300",
+    2: "800",
+    3: "1050",
+    4: "9999",
   };
 
-  // TODO: completar metodo para generar los Radios
+  // completar metodo para generar los Radios
   // Es posible utilizar .map para mapear n elementos
   radioGroupGenerator() {
     return radioGroup.entries
-    .map(
-      (entry) => ListTile(
-        leading: Image.asset(
-          "${assetsRadioGroup[entry.key]}",
-          width: 48,),
-        title: Text("${entry.value}"),
-        trailing: Radio(
-          value: entry.key, 
-          groupValue: currentSelectedRadio, 
-          onChanged: (newValue){
-            currentSelectedRadio = newValue;
-            setState(() {});
-          }
+        .map(
+          (entry) => ListTile(
+            leading: Image.asset(
+              "${assetsRadioGroup[entry.key]}",
+              width: 48,
+            ),
+            title: Text("${entry.value}"),
+            trailing: Radio(
+              value: entry.key,
+              groupValue: currentSelectedRadio,
+              onChanged: (newValue) {
+                currentSelectedRadio = newValue;
+                setState(() {});
+              },
+            ),
           ),
         )
-      )
-      .toList();
+        .toList();
   }
 
-  // TODO: completar metodo para generar los DropDownMenuItems
+  // completar metodo para generar los DropDownMenuItems
   // Es posible utilizar .map como en la de los radios
   dropDownItemsGenerator() {
-  return dropDownGroups.entries.map((entry) => DropdownMenuEntry(
-    value: entry.key,
-    label: "${entry.value}"
-  )).toList();
-}
+    return dropDownGroup.entries
+        .map(
+          (entry) => DropdownMenuEntry(
+            value: entry.key,
+            label: "${entry.value}",
+          ),
+        )
+        .toList();
+  }
 
-  // TODO: metodo para calcular las donaciones
+  // Metodo para calcular las donaciones
   // identifica si la donacion es por paypal o tarjeta
   // utiliza datos de los radio buttons y drop down
   void calcularDonaciones() {
-    donacionesAcumuladas += 
-    int.parse(dropDownGroups[currentSelectedDrop]!);
+    if (currentSelectedRadio != null && currentSelectedRadio == 0) {
+      donacionesPaypal += int.parse(dropDownGroup[currentSelectedDrop]!);
+    } else if (currentSelectedRadio != null && currentSelectedRadio == 1) {
+      donacionesTarjeta += int.parse(dropDownGroup[currentSelectedDrop]!);
+    }
+    donacionesAcumuladas = donacionesPaypal + donacionesTarjeta;
+    if (getDonationsProgress() >= 100) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              "Gracias! Llegamos a la meta de donaciones.",
+              style: TextStyle(
+                color: Colors.grey[200],
+              ),
+            ),
+            backgroundColor: Colors.purple[700],
+          ),
+        );
+    }
     setState(() {});
+  }
+
+  // Metodo para retornar el progreso y mostrar su porcentaje
+  double getDonationsProgress() {
+    return (donacionesAcumuladas / donacionesTotal * 100) > 100
+        ? 100
+        : (donacionesAcumuladas / donacionesTotal * 100);
   }
 
   @override
@@ -79,7 +112,7 @@ class _HomePageState extends State<HomePage> {
         title: Text('Donaciones'),
       ),
       body: Padding(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: ListView(
           children: [
             Text(
@@ -103,46 +136,53 @@ class _HomePageState extends State<HomePage> {
                 children: radioGroupGenerator(),
               ),
             ),
-            // TODO: Agregar DropdownButton en el trailing
+            // Agregar DropdownButton en el trailing
             // utilizar el metodo dropDownItemsGenerator() para pasar
             // como parametro a "items" del DropdownButton
             ListTile(
               title: Text("Cantidad a donar:"),
-              trailing: 
-                DropdownMenu(
-                  dropdownMenuEntries: dropDownItemsGenerator(),
-                  onSelected: (newValue){
-                    currentSelectedDrop = newValue as int?;
-                    setState(() {});
-                  }
-                ),
+              trailing: DropdownMenu(
+                dropdownMenuEntries: dropDownItemsGenerator(),
+                onSelected: (newValue) {
+                  currentSelectedDrop = newValue as int?;
+                  setState(() {});
+                },
+              ),
             ),
+            SizedBox(height: 48),
             LinearProgressIndicator(
               value: donacionesAcumuladas / donacionesTotal,
-              minHeight: 24,
+              minHeight: 12,
             ),
-            Text("${(donacionesAcumuladas / donacionesTotal * 100)>100 
-            ? 100 : (donacionesAcumuladas / donacionesTotal * 100)}%"),
+            Text(
+              "${getDonationsProgress()}%",
+              textAlign: TextAlign.center,
+            ),
             MaterialButton(
-              onPressed: (){
+              onPressed: () {
                 calcularDonaciones();
               },
               child: Text("Donar"),
             )
-            // TODO: Agregar LinearProgressIndicator con altura de 20
-            // TODO: Agregar Text con el % de donacion y max 2 decimales
-            // TODO: Agregar Boton de DONAR y logica necesaria
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.remove_red_eye),
+        child: Icon(Icons.next_plan),
         tooltip: "Ver donativos",
         onPressed: () {
+          // TODO: pasar datos y navegar a la pagina de donativos
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => DonativosPage()
-            )
+              builder: (context) => DonativosPage(
+                donativosData: {
+                  "totalPaypal": donacionesPaypal,
+                  "totalTarjeta": donacionesTarjeta,
+                  "donacionesTope": donacionesAcumuladas,
+                  "acumulado": donacionesAcumuladas
+                }
+              ),
+            ),
           );
         },
       ),
